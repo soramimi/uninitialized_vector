@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <utility>
+#include <vector>
 #include <new>
 
 template <typename T> class uninitialized_vector {
@@ -30,9 +31,22 @@ public:
 		d = r.d;
 		r.d = {};
 	}
+	uninitialized_vector(std::initializer_list<T> const &a)
+	{
+		make(a);
+	}
 	~uninitialized_vector()
 	{
-		free(d.array);
+		clear();
+	}
+	void make(std::initializer_list<T> const &a)
+	{
+		size_t n = a.end() - a.begin();
+		resize(n);
+		auto it = a.begin();
+		for (size_t i = 0; i < n; i++) {
+			at(i) = *it++;
+		}
 	}
 	void operator = (uninitialized_vector const &r)
 	{
@@ -46,6 +60,31 @@ public:
 	{
 		d = r.d;
 		r.d = {};
+	}
+	void operator = (std::initializer_list<T> const &a)
+	{
+		make(a);
+	}
+	void clear()
+	{
+		free(d.array);
+		d = {};
+	}
+	T &at(size_t i)
+	{
+		return d.array[i];
+	}
+	T const &at(size_t i) const
+	{
+		return d.array[i];
+	}
+	T &operator [] (size_t i)
+	{
+		return at(i);
+	}
+	T const &operator [] (size_t i) const
+	{
+		return at(i);
 	}
 	class const_iterator;
 	class iterator {
@@ -380,8 +419,12 @@ public:
 			free(d.array);
 			d = newvec.d;
 			newvec.d = {};
-		} else {
-			d.count = n;
+		}
+	}
+	void fill(T const &v)
+	{
+		for (size_t i = 0; i < d.count; i++) {
+			d.array[i] = v;
 		}
 	}
 	bool empty() const
@@ -513,14 +556,6 @@ public:
 		if (d.count > 0) {
 			d.count--;
 		}
-	}
-	T &operator [] (size_t i)
-	{
-		return d.array[i];
-	}
-	T const &operator [] (size_t i) const
-	{
-		return d.array[i];
 	}
 	void swap(uninitialized_vector &r)
 	{
